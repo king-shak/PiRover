@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<head>
+
+	<title>PiRover Control Panel</title>
+	<style>
+
+	html, body {
+		padding:0;
+		margin:0;
+		border:0;
+	}
+
+	#topBannerContent{
+		font-family:monospace, sans-serif;
+		margin:0;
+		padding:5px;
+	}
+
+	#mainContent {
+		height:70%;
+		width:100%;
+	}
+
+	#wrapper {
+		height:70%;
+		width:100%;
+		overflow:hidden;
+		margin: 0 auto;
+	}
+
+	#cameraControls {
+		float:left;
+		height:70%;
+		width:10em;
+		padding-left:8.8%;
+	}
+
+	#c-spacer {
+		height:0.5em;
+		width:10em;
+	}
+
+        #rec_indicator {
+        	height:4em;
+        	width:10em;
+        	float:left;
+        	color:blue;
+        	padding-left:8.8%;
+        	font-family:monospace, sans-serif;
+        	padding-top:8%;
+        }
+
+	#controlsHeader {
+		font-family:monospace, sans-serif;
+		text-align:center;
+	}
+
+	#movementControls {
+		overflow:hidden;
+		float:left;
+		height:70%;
+		width:31em;
+		padding-left:8.8%;
+	}
+
+	#topDivider {
+		text-align:center;
+		float:top;
+		height:23.3%;
+		width:100%;
+	}
+
+	#centerDivider {
+		text-align:center;
+		float:center;
+		height:23.3%;
+		width:100%;
+	}
+
+	#sensorVals {
+		display:table;
+		height:30%;
+		width:100%;
+	}
+
+	#m-spacer {
+		height:0.3em;
+		widthL100%;
+	}
+
+	#sensorValWrapper {
+		height:30%;
+		width:25%;
+		display:table-cell;
+		padding-left:7%;
+		padding-right:7%;
+	}
+
+	.sensorValListing {
+		height:100%;
+		width:50%;
+		display:table-cell;
+		font-size:1.4em;
+		font-family: monospace, sans-serif;
+	}
+
+	#sensorValListingHeader {
+		height:100%;
+		width:50%;
+		display:table-cell;
+		font-size:1.4em;
+		font-family: monospace, sans-serif;
+	}
+
+	#infoBar {
+		height:2em;
+		width:100%;
+		padding-bottom:1.5em;
+		display:table;
+	}
+
+	#info {
+		color:red;
+		font-family:monospace, sans-serif;
+		font-size:1.5em;
+		text-align:center;
+		display:table-cell;
+	}
+
+	#bottomDivider {
+		text-align:center;
+		float:bottom;
+		height:23.4%;
+		width:100%;
+	}
+
+	#spacer {
+		color:gray;
+	}
+
+	.banner {
+		height:15%;
+		width:100%;
+		background-color:gray;
+	}
+
+	.button {
+		height:10em;
+		width:10em;
+		font-size:1em;
+		font-family:monospace, sans-serif;
+	}
+
+	</style>
+
+</head>
+
+<body>
+
+	<script>
+	var ws = new WebSocket("ws://192.168.4.1:8080/ws");
+	var data = [0, 0, 0, 0, 0, 0];			// left speed, left motor direction, right speed, right motor direction, capture, recording
+	var camera_values = [0, 0];	// capture, rec toggle
+	var info = "The Rover is Immobile";
+
+	function importCameraValues(_rec_status) {
+		console.log("	");
+		console.log("importCameraValues | _rec_status: " + _rec_status);
+		console.log("	");
+		if (camera_values[0] == 1) {
+			console.log("	");
+			console.log("importCameraValues |  camera button has been toggled...");
+			console.log("	");
+			if (_rec_status == 1) {
+				info = "Cannot capture picture, video is recording"
+				console.log("	");
+				console.log("importCameraValues | camera button has been toggled...cannot capture, video is recording");
+				console.log("data[4] : " + data[4]);
+				console.log("camera_values[0] : " + camera_values[0]);
+				console.log("	");
+			} else {
+				data[4] = camera_values[0];
+				console.log("	");
+				console.log("importCameraValues | camera button has been toggled...can capture, video is not being recorded");
+				console.log("data[4] : " + data[4]);
+				console.log("camera_values[0] : " + camera_values[0]);
+				console.log("	");
+			}
+		}
+		else {
+			data[4] = 0;
+		}
+		data[5] = camera_values[1];
+		console.log("	");
+		console.log("importCameraValues | setting value for rec status");
+		console.log("data[5] : " + data[5]);
+		console.log("camera_values[1] : " + camera_values[1]);
+		console.log("	");
+		camera_values[0] = 0;
+		camera_values[1] = 0;
+		console.log("	");
+		console.log("Reset camera_values, here are the contents: " + camera_values);
+		console.log("	");
+	};
+
+	function forward() {
+		data[0] = 1;
+		data[1] = 0;
+		data[2] = 1;
+		data[3] = 0;
+		info = "The Rover is Moving Forward";
+		console.log("	");
+		console.log("The rover is moving forward");
+		console.log("	");
+	};
+
+	function backward() {
+		data[0] = 1;
+		data[1] = 1;
+		data[2] = 1;
+		data[3] = 1;
+		info = "The Rover is Moving Backward";
+		console.log("	");
+		console.log("The rover is moving backwards");
+		console.log("	");
+	};
+
+	function right() {
+		data[0] = 0;
+		data[1] = 0;
+		data[2] = 1;
+		data[3] = 0;
+		info = "The Rover is Turning Right";
+		console.log("	");
+		console.log("The rover is turning right");
+		console.log("	");
+	};
+
+	function left() {
+		data[0] = 1;
+		data[1] = 0;
+		data[2] = 0;
+		data[3] = 0;
+		info = "The Rover is Turning Left";
+		console.log("	");
+		console.log("The rover is turning left");
+		console.log("	");
+	};
+
+	function stop() {
+		data[0] = 0;
+		data[1] = 0;
+		data[2] = 0;
+		data[3] = 0;
+		info = "The Rover is Immobile";
+		console.log("	");
+		console.log("The Rover is immobile");
+		console.log("	");
+	};
+
+	function capture() {
+		camera_values[0] = 1;
+		info = "The Rover has Captured a Picture";
+		console.log("	");
+		console.log("The capture button has been hit");
+		console.log("	");
+	};
+
+	function rec() {
+		camera_values[1] = 1;
+		console.log("	");
+		console.log("The rec button has been toggled");
+		console.log("	");
+	};
+
+	ws.onopen = function() {
+		info = "You have just connected to the Control Panel"
+		console.log("	");
+		console.log("New Connection");
+		console.log("	");
+	};
+
+	ws.onmessage = function (event) {
+		var values = JSON.parse(event.data);
+		console.log("Retrieved data from server");
+		document.getElementById('x').textContent = values['xAxis'];
+		document.getElementById('y').textContent = values['yAxis'];
+		document.getElementById('z').textContent = values['zAxis'];
+		console.log("Set accelerometer values");
+		document.getElementById('range').textContent = values['distance'] + " CM";
+		if (values['recStatus'] == 1) {
+			document.getElementById("rec_indicator").style.color = "blue";
+			console.log("	");
+			console.log("Video is being recorded");
+			console.log("	");
+		} else if (values['recStatus'] == 0) {
+			document.getElementById("rec_indicator").style.color = "white";
+			console.log("	");
+			console.log("Video is not being recorded");
+			console.log("	");
+		} else {
+			ws.close();
+			info = "Error Alpha";
+		}
+		document.getElementById('info').textContent = "INFO: " + info;
+		console.log("Info has been set");
+		console.log("Contents of camera_values : " + camera_values);
+		importCameraValues(values['recStatus']);
+		console.log("Camera values have been imported into the main data string");
+		console.log("Main data string:" + data);
+		ws.send(data);
+	};
+
+	ws.onclose = function() {
+		console.log("	");
+		console.log("Connection closed");
+		console.log("	");
+	}
+	</script>
+
+	<div class="banner">
+		<h2 id="topBannerContent">PiRover Control Panel</h2>
+	</div>
+
+	<div id="mainContent">
+
+		<div id="wrapper">
+
+			<div id="rec_indicator"><h3>Video is being recorded</h3></div>
+
+			<div id="cameraControls">
+
+				<h3 id="controlsHeader">Camera Controls</h3>
+				<button class="button", id="rec", onclick="rec()">Start/Stop Recording</button>
+				<div id="c-spacer"></div>
+				<button class="button", id="capture", onclick="capture()">Capture</button>
+
+			</div>
+
+			<div id="movementControls">
+
+				<h3 id="controlsHeader">Movement Controls</h3>
+
+				<div id="topDivider">
+
+		            		<button class="button", id="forward", onclick="forward()">Forward</button>
+
+				</div>
+
+				<div id="m-spacer"></div>
+
+				<div id="centerDivider">
+
+					<button class="button", id="left", onclick="left()">Left</button>
+		            		<button class="button", id="stop", onclick="stop()">Stop</button>
+		            		<button class="button", id="right", onclick="right()">Right</button>
+
+				</div>
+
+				<div id="m-spacer"></div>
+
+				<div id="bottomDivider">
+
+		            		<button class="button", id="backward", onclick="backward()">Backward</button>
+
+				</div>
+
+			</div>
+
+		</div>
+
+		<div id="sensorVals">
+
+			<div id="sensorValWrapper">
+
+				<div id="sensorValListingHeader"><p>X: </p></div>
+				<div class="sensorValListing", id="x"></div>
+
+			</div>
+
+			<div id="sensorValWrapper">
+
+				<div id="sensorValListingHeader"><p>Y: </p></div>
+				<div class="sensorValListing", id="y"></div>
+
+			</div>
+
+			<div id="sensorValWrapper">
+
+				<div id="sensorValListingHeader"><p>Z: </p></div>
+				<div class="sensorValListing", id="z"></div>
+
+			</div>
+
+			<div id="sensorValWrapper">
+
+				<div id="sensorValListingHeader"><p>Range: </p></div>
+				<div class="sensorValListing", id="range"></div>
+
+			</div>
+
+		</div>
+
+	</div>
+
+	<div id="infoBar">
+
+		<div id="info"></div>
+
+	</div>
+
+	<div id="spacer", class="banner">
+		<p style="font-size:1.2em">spacer<p>
+	</div>
+
+</body>
+</html>
